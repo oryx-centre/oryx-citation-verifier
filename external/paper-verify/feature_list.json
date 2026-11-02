@@ -1,0 +1,211 @@
+{
+  "$schema": "./tools/feature_list.schema.json",
+  "project": "paper-verify",
+  "note": "Harness primitive (learn-harness-engineering L08 pilot). Each feature = (behavior, verification, state, evidence). State -> passing ONLY via tools/feature_gate.py running the verification command. Do not hand-edit state to 'passing'; the gate controls transitions. Initial states reflect docs/harness/2026-06-04_paper-verify-audit/01_BACKLOG.md (the human doc) — run the gate to reconcile with ground truth.",
+  "features": [
+    {
+      "id": "P1-1",
+      "name": "HTTP retry/backoff on transient errors",
+      "behavior": "Main fetch path retries once with backoff on a transient 5xx/timeout; does not retry on non-transient 4xx.",
+      "verification": "python -m pytest tests/test_p1_robustness.py -k 'retries or does_not_retry' -q",
+      "dependencies": [],
+      "state": "passing",
+      "evidence": "2026-06-09 feature_gate: 2 passed, 24 deselected in 0.04s"
+    },
+    {
+      "id": "P1-2",
+      "name": "Wayback fallback uses timestamped snapshot",
+      "behavior": "Archive fallback resolves a real snapshot via the availability API (timestamped), distinguishes not-captured from API error, and skips archive when no snapshot.",
+      "verification": "python -m pytest tests/test_p1_robustness.py -k 'archive_url or skips_archive' -q",
+      "dependencies": [],
+      "state": "passing",
+      "evidence": "2026-06-09 feature_gate: 4 passed, 22 deselected in 0.02s"
+    },
+    {
+      "id": "P1-3",
+      "name": "soft-404 markers narrowed",
+      "behavior": "soft-404 heuristic does not trip on legit academic pages containing 'error'/'404' as words; still flags specific 'page not found' phrases (EN+KO).",
+      "verification": "python -m pytest tests/test_p1_robustness.py -k 'soft_404' -q",
+      "dependencies": [],
+      "state": "passing",
+      "evidence": "2026-06-09 feature_gate: 4 passed, 22 deselected in 0.03s"
+    },
+    {
+      "id": "P1-4",
+      "name": "tiebreak consensus is majority/arbiter (not min)",
+      "behavior": "Tiebreak is not dragged by a single dissent; INACCESSIBLE is excluded from claim consensus; an arbiter breaks a true tie.",
+      "verification": "python -m pytest tests/test_p1_robustness.py -k 'tiebreak' -q",
+      "dependencies": [],
+      "state": "passing",
+      "evidence": "2026-06-09 feature_gate: 3 passed, 23 deselected in 0.02s"
+    },
+    {
+      "id": "P1-5",
+      "name": "keyword judge clamps Match on missing year/number",
+      "behavior": "Keyword judge clamps Match->Partial when a claim's year or number is absent from the source; keeps Match when present or when the claim has no year/number.",
+      "verification": "python -m pytest tests/test_p1_robustness.py -k 'keyword_match' -q",
+      "dependencies": [],
+      "state": "passing",
+      "evidence": "2026-06-09 feature_gate: 4 passed, 22 deselected in 0.02s"
+    },
+    {
+      "id": "P1-6",
+      "name": "robust charset decoding (Korean mojibake)",
+      "behavior": "Decoding handles quoted charset, trailing params, <meta charset> fallback, UTF-8 BOM, and never raises on garbage.",
+      "verification": "python -m pytest tests/test_p1_robustness.py -k 'decode' -q",
+      "dependencies": [],
+      "state": "passing",
+      "evidence": "2026-06-09 feature_gate: 5 passed, 21 deselected in 0.02s"
+    },
+    {
+      "id": "P1-7",
+      "name": "MCP verify_* structured errors + path validation",
+      "behavior": "MCP verify_file/verify_text return {'error': ...} on bad input (missing/oversized file, pipeline error) instead of raising; path is validated.",
+      "verification": "python -m pytest tests/test_mcp_server.py -k 'verify_file or pipeline_error or too_large' -q",
+      "dependencies": [],
+      "state": "passing",
+      "evidence": "2026-06-09 feature_gate: 6 passed, 7 deselected in 0.03s"
+    },
+    {
+      "id": "P1-8",
+      "name": "sources._get caps the response read",
+      "behavior": "sources._get caps the read at MAX_RESPONSE_BYTES (DoS/memory guard); the cap constant is bounded.",
+      "verification": "python -m pytest tests/test_p1_robustness.py -k 'caps_read or max_bytes' -q",
+      "dependencies": [],
+      "state": "passing",
+      "evidence": "2026-06-09 feature_gate: 2 passed, 24 deselected in 0.02s"
+    },
+    {
+      "id": "P1-9",
+      "name": "metadata API hosts are rate-limited",
+      "behavior": "Per-host rate limiting (MIN_HOST_INTERVAL) applies to metadata API hosts too (NCBI/arXiv fair use).",
+      "verification": "python -m pytest tests/test_p1_robustness.py -k 'rate_limits or min_host' -q",
+      "dependencies": [],
+      "state": "passing",
+      "evidence": "2026-06-09 feature_gate: 2 passed, 24 deselected in 0.02s"
+    },
+    {
+      "id": "P1-10",
+      "name": "test coverage for mcp_server + render_markdown",
+      "behavior": "mcp_server and report.py (render_markdown/json) are covered; split-consensus display is verified.",
+      "verification": "python -m pytest tests/test_report.py tests/test_mcp_server.py -q",
+      "dependencies": [],
+      "state": "passing",
+      "evidence": "2026-06-05 harness/p1-coverage: report.py 13->100%, mcp_server 0->86%, 88->112 tests"
+    },
+    {
+      "id": "W1",
+      "name": "offline evidence scoring (--from-evidence)",
+      "behavior": "External fetch/judge evidence JSON is scored with the standard rubric via report_from_evidence + CLI --from-evidence/--extract-only; malformed evidence exits 2 naming the citation index.",
+      "verification": "python -m pytest tests/test_offline.py -q",
+      "dependencies": [],
+      "state": "passing",
+      "evidence": "2026-06-11 feature_gate: 16 passed in 0.03s"
+    },
+    {
+      "id": "W2",
+      "name": "webchat assets rubric drift guard",
+      "behavior": "Portable prompts (EN/KO) and the webchat SKILL.md carry rubric numbers identical to score.py constants and reference the offline entrypoints.",
+      "verification": "python -m pytest tests/test_webchat_assets.py -q",
+      "dependencies": [
+        "W1"
+      ],
+      "state": "passing",
+      "evidence": "2026-06-11 feature_gate: 7 passed in 0.01s"
+    },
+    {
+      "id": "W3",
+      "name": "webchat skill zip builder",
+      "behavior": "tools/build_webchat_skill.py deterministically bundles SKILL.md + the paperverify package + sample evidence + fallback prompt; --check verifies required members.",
+      "verification": "python tools/build_webchat_skill.py --check",
+      "dependencies": [
+        "W1",
+        "W2"
+      ],
+      "state": "passing",
+      "evidence": "2026-06-11 feature_gate: OK: /var/folders/n9/l1xsjy5d071f7dffg4f074yh0000gn/T/tmp27vthgr0/paper-verify-webchat-skill.zip (17 files)"
+    },
+    {
+      "id": "R1",
+      "name": "Conservative judge responses and independent consensus",
+      "behavior": "Malformed or failed judge output abstains; duplicate judges do not inflate agreement; tie-break evidence is retained.",
+      "verification": "python -m pytest tests/test_review_judging.py -q",
+      "dependencies": [],
+      "state": "passing",
+      "evidence": "2026-09-08 feature_gate: 13 passed in 0.01s"
+    },
+    {
+      "id": "R2",
+      "name": "Fetch identity and usable source handling",
+      "behavior": "Metadata routing respects host identity and arXiv versions; L1 failures and soft-404s are observable; unsupported bodies cannot support a claim.",
+      "verification": "python -m pytest tests/test_review_fetching.py -q",
+      "dependencies": [],
+      "state": "passing",
+      "evidence": "2026-09-08 feature_gate: 20 passed in 0.05s"
+    },
+    {
+      "id": "R3",
+      "name": "Strict external evidence contract",
+      "behavior": "Reject malformed evidence types, duplicate IDs and mismatched fetched IDs with indexed errors.",
+      "verification": "python -m pytest tests/test_review_evidence.py -q",
+      "dependencies": [],
+      "state": "passing",
+      "evidence": "2026-09-08 feature_gate: 26 passed in 0.01s"
+    },
+    {
+      "id": "R4",
+      "name": "Reliable CLI and verification gates",
+      "behavior": "Input and output failures have exit 2, offline modes avoid provider probing, and invalid feature gate selections fail.",
+      "verification": "python -m pytest tests/test_review_operations.py -q",
+      "dependencies": [],
+      "state": "passing",
+      "evidence": "2026-09-08 feature_gate: 22 passed in 0.06s"
+    },
+    {
+      "id": "R5",
+      "name": "Citation extraction and honest report output",
+      "behavior": "Preserve balanced URL parentheses and case-sensitive paths; reports expose consensus evidence and distinguish inaccessible from fabricated.",
+      "verification": "python -m pytest tests/test_review_reporting.py -q",
+      "dependencies": [],
+      "state": "passing",
+      "evidence": "2026-09-08 feature_gate: 9 passed in 0.03s"
+    },
+    {
+      "id": "R6",
+      "name": "Claim context excludes reference syntax and adjacent paragraphs",
+      "behavior": "Reference URL/identifier tokens and adjacent paragraphs do not distort keyword or author/year checks; structured source metadata is available to judges; metadata retries respect host pacing.",
+      "verification": "python -m pytest tests/test_review_context.py -q",
+      "dependencies": [
+        "R1",
+        "R2",
+        "R5"
+      ],
+      "state": "passing",
+      "evidence": "2026-09-08 feature_gate: 8 passed in 0.02s"
+    },
+    {
+      "id": "R7",
+      "name": "Release integration keeps heuristic and harness evidence conservative",
+      "behavior": "Keyword-only evidence is not labeled strong; structured CLI tool/status/user events cannot supply verdicts. Schema 7 retains upstream review signals and tie-break evidence.",
+      "verification": "python -m pytest tests/test_review_integration.py -q",
+      "dependencies": [
+        "R1",
+        "R5"
+      ],
+      "state": "passing",
+      "evidence": "2026-09-08 feature_gate: 14 passed in 0.01s"
+    },
+    {
+      "id": "R8",
+      "name": "Psychology corpus live/replay checks and DOI abstract fallback",
+      "behavior": "Twenty public psychology papers support opt-in CLI live checks and offline replay. Missing Crossref abstracts fall back to DOI/title-matched Europe PMC then Semantic Scholar with per-field provenance; numeric inequalities survive cleaning.",
+      "verification": "python -m pytest tests/test_review_live_corpus.py -q",
+      "dependencies": [
+        "R6",
+        "R7"
+      ],
+      "state": "passing",
+      "evidence": "2026-09-08 feature_gate: 11 passed in 0.02s"
+    }
+  ]
+}
